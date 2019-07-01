@@ -18,19 +18,18 @@
   under the License.
 -->
 
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-           id="cordova-plugin-crosswalk-inappbrowser"
-      version="3.1.1-dev">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-crosswalk-inappbrowser" version="3.1.1-dev">
 
     <name>InAppBrowser</name>
     <description>Cordova InAppBrowser Plugin</description>
     <license>Apache 2.0</license>
     <keywords>cordova,in,app,browser,inappbrowser</keywords>
-    <repo>https://github.com/apache/cordova-plugin-inappbrowser</repo>
-    <issue>https://github.com/apache/cordova-plugin-inappbrowser/issues</issue>
+    <repo>https://github.com/waitaction/cordova-plugin-crosswalk-inappbrowser</repo>
+    <issue>https://github.com/waitaction/cordova-plugin-crosswalk-inappbrowser/issues</issue>
 
     <engines>
-      <engine name="cordova" version=">=3.1.0" /><!-- Needs cordova/urlutil -->
+        <engine name="cordova" version=">=3.1.0" />
+        <!-- Needs cordova/urlutil -->
     </engines>
 
     <!-- android -->
@@ -65,6 +64,43 @@
         <resource-file src="src/android/res/drawable-xhdpi/ic_action_remove.png" target="res/drawable-xhdpi/ic_action_remove.png" />
         <resource-file src="src/android/res/drawable-xxhdpi/ic_action_remove.png" target="res/drawable-xxhdpi/ic_action_remove.png" />
 
+
+        <!-- cordova-plugin-crosswalk-webview -->
+        <preference name="XWALK_VERSION" default="23+"/>
+        <preference name="XWALK_LITEVERSION" default="xwalk_core_library_canary:17+"/>
+        <preference name="XWALK_COMMANDLINE" default="--disable-pull-to-refresh-effect"/>
+        <preference name="XWALK_MODE" default="embedded" />
+        <preference name="XWALK_MULTIPLEAPK" default="true" />
+        <config-file target="res/xml/config.xml" parent="/*">
+            <preference name="xwalkVersion" value="$XWALK_VERSION"/>
+            <preference name="xwalkLiteVersion" value="$XWALK_LITEVERSION"/>
+            <preference name="xwalkCommandLine" value="$XWALK_COMMANDLINE"/>
+            <preference name="xwalkMode" value="$XWALK_MODE" />
+            <preference name="xwalkMultipleApk" value="$XWALK_MULTIPLEAPK" />
+            <preference name="android-minSdkVersion" value="19" />
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+        </config-file>
+
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkWebViewEngine.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkFileChooser.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkExposedJsApi.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkCordovaResourceClient.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkCordovaUiClient.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkCordovaView.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkCordovaCookieManager.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkCordovaClientCertRequest.java" target-dir="src/org/crosswalk/engine"/>
+        <source-file src="platforms/android/src/org/crosswalk/engine/XWalkCordovaHttpAuthHandler.java" target-dir="src/org/crosswalk/engine"/>
+
+        <framework src="platforms/android/xwalk.gradle" custom="true" type="gradleReference"/>
+
+        <hook type="after_plugin_install" src="hooks/after_plugin_install/000-shared_mode_special.js"/>
+        <hook type="before_plugin_uninstall" src="hooks/before_plugin_uninstall/000-shared_mode_special.js"/>
+        <hook type="after_build" src="hooks/after_build/000-build_64_bit.js"/>
+        <hook type="before_build" src="hooks/before_build/000-build_64_bit.js"/>
     </platform>
 
     <!-- ios -->
@@ -89,19 +125,19 @@
         </config-file>
 
         <header-file src="src/ios/CDVInAppBrowser.h" />
-	    <source-file src="src/ios/CDVInAppBrowser.m" />
+        <source-file src="src/ios/CDVInAppBrowser.m" />
         <header-file src="src/ios/CDVInAppBrowserOptions.h" />
         <source-file src="src/ios/CDVInAppBrowserOptions.m" />
         <header-file src="src/ios/CDVInAppBrowserNavigationController.h" />
         <source-file src="src/ios/CDVInAppBrowserNavigationController.m" />
-	    <header-file src="src/ios/CDVUIInAppBrowser.h" />
-	    <source-file src="src/ios/CDVUIInAppBrowser.m" />
-	    <header-file src="src/ios/CDVWKInAppBrowser.h" />
-	    <source-file src="src/ios/CDVWKInAppBrowser.m" />
-	    <header-file src="src/ios/CDVWKInAppBrowserUIDelegate.h" />
-	    <source-file src="src/ios/CDVWKInAppBrowserUIDelegate.m" />
+        <header-file src="src/ios/CDVUIInAppBrowser.h" />
+        <source-file src="src/ios/CDVUIInAppBrowser.m" />
+        <header-file src="src/ios/CDVWKInAppBrowser.h" />
+        <source-file src="src/ios/CDVWKInAppBrowser.m" />
+        <header-file src="src/ios/CDVWKInAppBrowserUIDelegate.h" />
+        <source-file src="src/ios/CDVWKInAppBrowserUIDelegate.m" />
 
-	    <framework src="CoreGraphics.framework" />
+        <framework src="CoreGraphics.framework" />
     </platform>
 
     <!-- osx -->

@@ -4,7 +4,7 @@
   "description": "Cordova InAppBrowser Plugin",
   "types": "./types/index.d.ts",
   "cordova": {
-    "id": "cordova-plugin-inappbrowser",
+    "id": "cordova-plugin-crosswalk-inappbrowser",
     "platforms": [
       "android",
       "browser",
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/apache/cordova-plugin-inappbrowser"
+    "url": "https://github.com/waitaction/cordova-plugin-crosswalk-inappbrowser"
   },
   "bugs": {
-    "url": "https://github.com/apache/cordova-plugin-inappbrowser/issues"
+    "url": "https://github.com/waitaction/cordova-plugin-crosswalk-inappbrowser/issues"
   },
   "keywords": [
     "cordova",
