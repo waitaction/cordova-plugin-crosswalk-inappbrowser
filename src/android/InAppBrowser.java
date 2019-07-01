@@ -23,10 +23,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.provider.Browser;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -43,12 +40,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
-import android.webkit.HttpAuthHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -59,16 +53,16 @@ import android.widget.TextView;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.Config;
 import org.apache.cordova.CordovaArgs;
-import org.apache.cordova.CordovaHttpAuthHandler;
 import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CordovaPreferences;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.LOG;
 import org.apache.cordova.PluginManager;
 import org.apache.cordova.PluginResult;
-import org.crosswalk.engine.XWalkCordovaView;
+import org.crosswalk.engine.XWalkCordovaHttpAuthHandler;
+import org.crosswalk.engine.XWalkWebViewEngine;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.xwalk.core.XWalkHttpAuthHandler;
 import org.xwalk.core.XWalkResourceClient;
 import org.xwalk.core.XWalkSettings;
 import org.xwalk.core.XWalkView;
@@ -114,7 +108,7 @@ public class InAppBrowser extends CordovaPlugin {
     private static final List customizableOptions = Arrays.asList(CLOSE_BUTTON_CAPTION, TOOLBAR_COLOR, NAVIGATION_COLOR, CLOSE_BUTTON_COLOR, FOOTER_COLOR);
 
     private InAppBrowserDialog dialog;
-    private XWalkCordovaView inAppWebView;
+    private XWalkView inAppWebView;
     private EditText edittext;
     private CallbackContext callbackContext;
     private boolean showLocationBar = true;
@@ -453,7 +447,7 @@ public class InAppBrowser extends CordovaPlugin {
         this.cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                final XWalkCordovaView childView = inAppWebView;
+                final XWalkView childView = inAppWebView;
                 // The JS protects against multiple calls, so this should happen only when
                 // closeDialog() is called by other native code.
                 if (childView == null) {
@@ -842,7 +836,7 @@ public class InAppBrowser extends CordovaPlugin {
 
 
                 // WebView
-                inAppWebView = new XWalkCordovaView(cordova.getContext(),(CordovaPreferences)null);
+                inAppWebView = new XWalkView(cordova.getContext());
                 inAppWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
                 inAppWebView.setId(Integer.valueOf(6));
                 // File Chooser Implemented ChromeClient
@@ -888,8 +882,9 @@ public class InAppBrowser extends CordovaPlugin {
 //                    }
 //
 //                });
-               // XWalkResourceClient client = new InAppBrowserClient(thatWebView, edittext);
-               // inAppWebView .setWebViewClient(client);
+                //InAppBrowserClient client = new InAppBrowserClient(thatWebView);
+                InAppBrowserClient client = new InAppBrowserClient(inAppWebView);
+                inAppWebView.setResourceClient(client);
                 //inAppWebView.setResourceClient(client);
                 XWalkSettings settings = inAppWebView.getSettings();
                 settings.setJavaScriptEnabled(true);
@@ -1047,21 +1042,25 @@ public class InAppBrowser extends CordovaPlugin {
     /**
      * The webview client receives notifications about appView
      */
-    public class InAppBrowserClient extends WebViewClient {
-        EditText edittext;
-        CordovaWebView webView;
+    public class InAppBrowserClient extends XWalkResourceClient {
+        //EditText edittext;
+        XWalkView webView;
 
         /**
          * Constructor.
          *
          * @param webView
-         * @param mEditText
          */
-        public InAppBrowserClient(CordovaWebView webView, EditText mEditText) {
+        public InAppBrowserClient(XWalkView webView) {
+            super(webView);
             this.webView = webView;
-            this.edittext = mEditText;
         }
+        //protected XWalkWebViewEngine parentEngine;
 
+//        public InAppBrowserClient(XWalkWebViewEngine parentEngine) {
+//            super(parentEngine.webView);
+//            this.parentEngine = parentEngine;
+//        }
         /**
          * Override the URL that should be loaded
          *
@@ -1071,7 +1070,7 @@ public class InAppBrowser extends CordovaPlugin {
          * @param url
          */
         @Override
-        public boolean shouldOverrideUrlLoading(WebView webView, String url) {
+        public boolean shouldOverrideUrlLoading(XWalkView webView, String url) {
             if (url.startsWith(WebView.SCHEME_TEL)) {
                 try {
                     Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -1149,6 +1148,7 @@ public class InAppBrowser extends CordovaPlugin {
         }
 
 
+
         /*
          * onPageStarted fires the LOAD_START_EVENT
          *
@@ -1157,8 +1157,8 @@ public class InAppBrowser extends CordovaPlugin {
          * @param favicon
          */
         @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            super.onPageStarted(view, url, favicon);
+        public void onLoadStarted(XWalkView view, String url) {
+            super.onLoadStarted(view, url);
             String newloc = "";
             if (url.startsWith("http:") || url.startsWith("https:") || url.startsWith("file:")) {
                 newloc = url;
@@ -1187,9 +1187,9 @@ public class InAppBrowser extends CordovaPlugin {
         }
 
 
-
-        public void onPageFinished(WebView view, String url) {
-            super.onPageFinished(view, url);
+        @Override
+        public void onLoadFinished(XWalkView view, String url) {
+            super.onLoadFinished(view, url);
 
             // CB-10395 InAppBrowser's WebView not storing cookies reliable to local device storage
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -1213,8 +1213,10 @@ public class InAppBrowser extends CordovaPlugin {
             }
         }
 
-        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-            super.onReceivedError(view, errorCode, description, failingUrl);
+
+        @Override
+        public void onReceivedLoadError(XWalkView view, int errorCode, String description, String failingUrl) {
+            super.onReceivedLoadError(view, errorCode, description, failingUrl);
 
             try {
                 JSONObject obj = new JSONObject();
@@ -1229,12 +1231,13 @@ public class InAppBrowser extends CordovaPlugin {
             }
         }
 
+
+
         /**
          * On received http auth request.
          */
         @Override
-        public void onReceivedHttpAuthRequest(WebView view, HttpAuthHandler handler, String host, String realm) {
-
+        public void onReceivedHttpAuthRequest(XWalkView view, XWalkHttpAuthHandler handler, String host, String realm) {
             // Check if there is some plugin which can resolve this auth challenge
             PluginManager pluginManager = null;
             try {
@@ -1259,9 +1262,9 @@ public class InAppBrowser extends CordovaPlugin {
                 }
             }
 
-            if (pluginManager != null && pluginManager.onReceivedHttpAuthRequest(webView, new CordovaHttpAuthHandler(handler), host, realm)) {
-                return;
-            }
+//            if (pluginManager != null && pluginManager.onReceivedHttpAuthRequest( this.parentEngine.parentWebView, new XWalkCordovaHttpAuthHandler(handler), host, realm)) {
+//                return;
+//            }
 
             // By default handle 401 like we'd normally do!
             super.onReceivedHttpAuthRequest(view, handler, host, realm);
