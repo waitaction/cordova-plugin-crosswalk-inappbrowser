@@ -18,58 +18,26 @@
 */
 package org.apache.cordova.inappbrowser;
 
-import org.apache.cordova.CordovaWebView;
+
 import org.apache.cordova.LOG;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.xwalk.core.XWalkJavascriptResult;
+import org.xwalk.core.XWalkUIClient;
+import org.xwalk.core.XWalkView;
 
-import android.webkit.JsPromptResult;
-import android.webkit.WebChromeClient;
-import android.webkit.WebStorage;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.GeolocationPermissions.Callback;
+public class InAppChromeClient extends XWalkUIClient {
 
-public class InAppChromeClient extends WebChromeClient {
-
-    private CordovaWebView webView;
+    private XWalkView webView;
     private String LOG_TAG = "InAppChromeClient";
     private long MAX_QUOTA = 100 * 1024 * 1024;
-
-    public InAppChromeClient(CordovaWebView webView) {
-        super();
+    public InAppChromeClient(XWalkView webView) {
+        super(webView);
         this.webView = webView;
     }
-    /**
-     * Handle database quota exceeded notification.
-     *
-     * @param url
-     * @param databaseIdentifier
-     * @param currentQuota
-     * @param estimatedSize
-     * @param totalUsedQuota
-     * @param quotaUpdater
-     */
-    @Override
-    public void onExceededDatabaseQuota(String url, String databaseIdentifier, long currentQuota, long estimatedSize,
-            long totalUsedQuota, WebStorage.QuotaUpdater quotaUpdater)
-    {
-        LOG.d(LOG_TAG, "onExceededDatabaseQuota estimatedSize: %d  currentQuota: %d  totalUsedQuota: %d", estimatedSize, currentQuota, totalUsedQuota);
-        quotaUpdater.updateQuota(MAX_QUOTA);
-    }
 
-    /**
-     * Instructs the client to show a prompt to ask the user to set the Geolocation permission state for the specified origin.
-     *
-     * @param origin
-     * @param callback
-     */
-    @Override
-    public void onGeolocationPermissionsShowPrompt(String origin, Callback callback) {
-        super.onGeolocationPermissionsShowPrompt(origin, callback);
-        callback.invoke(origin, true, false);
-    }
+
 
     /**
      * Tell the client to display a prompt dialog to the user.
@@ -98,7 +66,7 @@ public class InAppChromeClient extends WebChromeClient {
      * @param result
      */
     @Override
-    public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+    public boolean onJsPrompt(XWalkView view, String url, String message, String defaultValue, XWalkJavascriptResult result) {
         // See if the prompt string uses the 'gap-iab' protocol. If so, the remainder should be the id of a callback to execute.
         if (defaultValue != null && defaultValue.startsWith("gap")) {
             if(defaultValue.startsWith("gap-iab://")) {
@@ -114,8 +82,8 @@ public class InAppChromeClient extends WebChromeClient {
                             scriptResult = new PluginResult(PluginResult.Status.JSON_EXCEPTION, e.getMessage());
                         }
                     }
-                    this.webView.sendPluginResult(scriptResult, scriptCallbackId);
-                    result.confirm("");
+                    InAppBrowser.callbackContext.sendPluginResult(scriptResult);
+                    result.confirm();
                     return true;
                 }
                 else {

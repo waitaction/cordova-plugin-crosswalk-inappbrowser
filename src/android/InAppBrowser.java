@@ -58,8 +58,6 @@ import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.LOG;
 import org.apache.cordova.PluginManager;
 import org.apache.cordova.PluginResult;
-import org.crosswalk.engine.XWalkCordovaHttpAuthHandler;
-import org.crosswalk.engine.XWalkWebViewEngine;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xwalk.core.XWalkHttpAuthHandler;
@@ -110,7 +108,7 @@ public class InAppBrowser extends CordovaPlugin {
     private InAppBrowserDialog dialog;
     private XWalkView inAppWebView;
     private EditText edittext;
-    private CallbackContext callbackContext;
+    public static CallbackContext callbackContext;
     private boolean showLocationBar = true;
     private boolean showZoomControls = true;
     private boolean openWindowHidden = false;
@@ -143,6 +141,7 @@ public class InAppBrowser extends CordovaPlugin {
      * @return A PluginResult object with a status and message.
      */
     public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext) throws JSONException {
+        this.callbackContext = callbackContext;
         if (action.equals("open")) {
             this.callbackContext = callbackContext;
             final String url = args.getString(0);
@@ -376,6 +375,12 @@ public class InAppBrowser extends CordovaPlugin {
                         inAppWebView.loadUrl("javascript:" + finalScriptToInject);
                     } else {
                         inAppWebView.evaluateJavascript(finalScriptToInject, null);
+//                        inAppWebView.evaluateJavascript(finalScriptToInject, new ValueCallback<String>() {
+//                            @Override
+//                            public void onReceiveValue(String value) {
+//                                callbackContext.success(value);
+//                            }
+//                        });
                     }
                 }
             });
@@ -699,7 +704,7 @@ public class InAppBrowser extends CordovaPlugin {
                 return _close;
             }
 
-            @SuppressLint("NewApi")
+            //@SuppressLint("NewApi")
             public void run() {
 
                 // CB-6702 InAppBrowser hangs when opening more than one instance
@@ -839,49 +844,51 @@ public class InAppBrowser extends CordovaPlugin {
                 inAppWebView = new XWalkView(cordova.getContext());
                 inAppWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
                 inAppWebView.setId(Integer.valueOf(6));
+                //inAppWebView.setUIClient();
                 // File Chooser Implemented ChromeClient
-//                inAppWebView.setWebChromeClient(new InAppChromeClient(thatWebView) {
-//                    // For Android 5.0+
-//                    public boolean onShowFileChooser (WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams)
-//                    {
-//                        LOG.d(LOG_TAG, "File Chooser 5.0+");
-//                        // If callback exists, finish it.
-//                        if(mUploadCallbackLollipop != null) {
-//                            mUploadCallbackLollipop.onReceiveValue(null);
-//                        }
-//                        mUploadCallbackLollipop = filePathCallback;
-//
-//                        // Create File Chooser Intent
-//                        Intent content = new Intent(Intent.ACTION_GET_CONTENT);
-//                        content.addCategory(Intent.CATEGORY_OPENABLE);
-//                        content.setType("*/*");
-//
-//                        // Run cordova startActivityForResult
-//                        cordova.startActivityForResult(InAppBrowser.this, Intent.createChooser(content, "Select File"), FILECHOOSER_REQUESTCODE_LOLLIPOP);
-//                        return true;
-//                    }
-//
-//                    // For Android 4.1+
-//                    public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture)
-//                    {
-//                        LOG.d(LOG_TAG, "File Chooser 4.1+");
-//                        // Call file chooser for Android 3.0+
-//                        openFileChooser(uploadMsg, acceptType);
-//                    }
-//
-//                    // For Android 3.0+
-//                    public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType)
-//                    {
-//                        LOG.d(LOG_TAG, "File Chooser 3.0+");
-//                        mUploadCallback = uploadMsg;
-//                        Intent content = new Intent(Intent.ACTION_GET_CONTENT);
-//                        content.addCategory(Intent.CATEGORY_OPENABLE);
-//
-//                        // run startActivityForResult
-//                        cordova.startActivityForResult(InAppBrowser.this, Intent.createChooser(content, "Select File"), FILECHOOSER_REQUESTCODE);
-//                    }
-//
-//                });
+                inAppWebView.setUIClient(new InAppChromeClient(inAppWebView) {
+                    // For Android 5.0+
+                    public boolean onShowFileChooser (WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams)
+                    {
+                        LOG.d(LOG_TAG, "File Chooser 5.0+");
+                        // If callback exists, finish it.
+                        if(mUploadCallbackLollipop != null) {
+                            mUploadCallbackLollipop.onReceiveValue(null);
+                        }
+                        mUploadCallbackLollipop = filePathCallback;
+
+                        // Create File Chooser Intent
+                        Intent content = new Intent(Intent.ACTION_GET_CONTENT);
+                        content.addCategory(Intent.CATEGORY_OPENABLE);
+                        content.setType("*/*");
+
+                        // Run cordova startActivityForResult
+                        cordova.startActivityForResult(InAppBrowser.this, Intent.createChooser(content, "Select File"), FILECHOOSER_REQUESTCODE_LOLLIPOP);
+                        return true;
+                    }
+
+                    // For Android 4.1+
+                    public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture)
+                    {
+                        LOG.d(LOG_TAG, "File Chooser 4.1+");
+                        // Call file chooser for Android 3.0+
+                        openFileChooser(uploadMsg, acceptType);
+                    }
+
+                    // For Android 3.0+
+                    public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType)
+                    {
+                        LOG.d(LOG_TAG, "File Chooser 3.0+");
+                        mUploadCallback = uploadMsg;
+                        Intent content = new Intent(Intent.ACTION_GET_CONTENT);
+                        content.addCategory(Intent.CATEGORY_OPENABLE);
+
+                        // run startActivityForResult
+                        cordova.startActivityForResult(InAppBrowser.this, Intent.createChooser(content, "Select File"), FILECHOOSER_REQUESTCODE);
+                    }
+
+
+                });
                 //InAppBrowserClient client = new InAppBrowserClient(thatWebView);
                 InAppBrowserClient client = new InAppBrowserClient(inAppWebView);
                 inAppWebView.setResourceClient(client);
